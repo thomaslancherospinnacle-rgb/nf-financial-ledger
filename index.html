@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AIL Income & Expense Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:       #0d1117;
+      --paper:     #f5f0e8;
+      --cream:     #ede8dc;
+      --gold:      #c8973a;
+      --gold-lt:   #e8c97a;
+      --forest:    #1e4035;
+      --forest-lt: #2a5548;
+      --red:       #b84040;
+      --muted:     #6b6355;
+      --border:    #d4cebf;
+      --shadow:    rgba(13,17,23,0.10);
+      --radius:    10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: var(--forest);
+      padding: 22px 24px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .logo-ring {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-ring svg { width: 22px; height: 22px; fill: var(--gold); }
+    .header-text h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.25rem;
+      color: #fff;
+      letter-spacing: .01em;
+      line-height: 1.2;
+    }
+    .header-text span {
+      font-size: .72rem;
+      color: var(--gold-lt);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Layout ─── */
+    .page-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 28px 16px 0;
+    }
+
+    /* ─── Type Selector Pills ─── */
+    .type-pills {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .type-pill {
+      flex: 1;
+      padding: 13px 10px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .03em;
+      transition: all .18s ease;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .type-pill svg { width: 20px; height: 20px; }
+    .type-pill.expense.active {
+      border-color: var(--red);
+      background: #fff5f5;
+      color: var(--red);
+    }
+    .type-pill.income.active {
+      border-color: var(--forest);
+      background: #f0f7f4;
+      color: var(--forest);
+    }
+    .type-pill:hover:not(.active) { border-color: var(--gold); color: var(--ink); }
+
+    /* ─── Card ─── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 16px var(--shadow);
+      overflow: hidden;
+    }
+    .card-section {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--cream);
+    }
+    .card-section:last-child { border-bottom: none; }
+    .section-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* ─── Form Elements ─── */
+    .form-row { display: flex; gap: 12px; }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      margin-bottom: 14px;
+    }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    label .req { color: var(--red); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200,151,58,.12);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Amount with prefix */
+    .amount-wrap { position: relative; }
+    .amount-prefix {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      font-weight: 600; color: var(--muted); font-size: .9rem; pointer-events: none;
+    }
+    .amount-wrap input { padding-left: 26px; font-size: 1.1rem; font-weight: 500; }
+
+    /* Select arrow */
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--muted); font-size: .8rem;
+    }
+    .select-wrap select { padding-right: 30px; cursor: pointer; }
+
+    /* Custom category reveal */
+    #customCategoryGroup {
+      display: none;
+      animation: slideIn .2s ease;
+    }
+    #customCategoryGroup.visible { display: flex; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── File Upload ─── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+      background: var(--paper);
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--gold);
+      background: #fdf9f0;
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .upload-text { font-size: .83rem; color: var(--muted); }
+    .upload-text strong { color: var(--ink); }
+
+    /* Receipt preview */
+    #previewWrap {
+      display: none;
+      margin-top: 12px;
+      position: relative;
+    }
+    #previewWrap.visible { display: block; }
+    #receiptPreview {
+      width: 100%; max-height: 220px; object-fit: contain;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--cream);
+    }
+    .preview-filename {
+      font-size: .75rem; color: var(--muted); margin-top: 5px; text-align: center;
+    }
+    .remove-file-btn {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(0,0,0,.55); color: #fff;
+      border: none; border-radius: 50%;
+      width: 24px; height: 24px;
+      font-size: .85rem; cursor: pointer; line-height: 24px; text-align: center;
+    }
+    /* PDF preview */
+    .pdf-preview-box {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px; background: var(--cream); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .pdf-preview-box svg { width: 28px; height: 28px; flex-shrink: 0; fill: var(--red); }
+    .pdf-preview-box span { font-size: .83rem; color: var(--ink); word-break: break-all; }
+
+    /* ─── Submit ─── */
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--forest);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .18s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:hover { background: var(--forest-lt); }
+    .submit-btn:active { transform: scale(.985); }
+    .submit-btn:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .submit-btn.loading .spinner { display: block; }
+    .submit-btn.loading .btn-label { display: none; }
+
+    /* ─── Alerts ─── */
+    .alert {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: .87rem;
+      margin-top: 16px;
+      line-height: 1.5;
+      animation: slideIn .25s ease;
+    }
+    .alert.visible { display: flex; align-items: flex-start; gap: 10px; }
+    .alert-success {
+      background: #edf7f2;
+      border: 1.5px solid #5fbe8e;
+      color: #1c5c3a;
+    }
+    .alert-error {
+      background: #fff5f5;
+      border: 1.5px solid #e07070;
+      color: #7a2020;
+    }
+    .alert svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 480px) {
+      .form-row { flex-direction: column; }
+      header { padding: 16px; }
+      .page-wrap { padding: 16px 12px 0; }
+      .card-section { padding: 16px; }
+    }
+
+    /* ─── Entry type hidden input ─── */
+    #entryTypeHidden { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-ring">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2zm-1 13l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>Business Tracker</h1>
+    <span>AIL · Income &amp; Expense Log</span>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Entry Type Pills -->
+  <div class="type-pills">
+    <button type="button" class="type-pill expense active" onclick="setType('Expense')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14H4v-4h16v4zm-8 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM3 6l1.5-3h15L21 6H3z"/></svg>
+      Expense
+    </button>
+    <button type="button" class="type-pill income" onclick="setType('Income')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.93V18h-2v-1.07A6.01 6.01 0 0 1 6 11h2c0 2.21 1.79 4 4 4s4-1.79 4-4-1.79-4-4-4V5.07A6.01 6.01 0 0 1 18 11a6.01 6.01 0 0 1-5 5.93z"/></svg>
+      Income
+    </button>
+  </div>
+
+  <div class="card">
+
+    <!-- Amount + Date -->
+    <div class="card-section">
+      <p class="section-label">Transaction</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount <span class="req">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-prefix">$</span>
+            <input type="number" id="amount" placeholder="0.00" step="0.01" min="0.01" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" id="transactionDate" required />
+        </div>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div class="card-section">
+      <p class="section-label">Category</p>
+      <div class="form-group">
+        <label>Category <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="category" onchange="handleCategoryChange()">
+            <option value="">— Select category —</option>
+            <optgroup label="Expenses">
+              <option>Leads</option>
+              <option>Licensing</option>
+              <option>Continuing Education</option>
+              <option>E&amp;O Insurance</option>
+              <option>CRM / Software</option>
+              <option>Phone / Dialer</option>
+              <option>Travel</option>
+              <option>Meals</option>
+              <option>Office Supplies</option>
+              <option>Marketing</option>
+              <option>Equipment</option>
+              <option>Professional Services</option>
+              <option>Agency Fees</option>
+              <option>Chargeback</option>
+            </optgroup>
+            <optgroup label="Income">
+              <option>Commission Income</option>
+              <option>Bonus Income</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Other</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="customCategoryGroup">
+        <label>Custom Category <span class="req">*</span></label>
+        <input type="text" id="customCategory" placeholder="Enter custom category…" />
+      </div>
+    </div>
+
+    <!-- Vendor + Payment -->
+    <div class="card-section">
+      <p class="section-label">Details</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vendor / Carrier</label>
+          <input type="text" id="vendor" placeholder="e.g. Lead Vendor, Symmetry" />
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div class="select-wrap">
+            <select id="paymentMethod">
+              <option value="">— Select —</option>
+              <option>Cash</option>
+              <option>Credit Card</option>
+              <option>Debit Card</option>
+              <option>Bank Transfer</option>
+              <option>Check</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" placeholder="Brief description of this transaction…"></textarea>
+      </div>
+    </div>
+
+    <!-- Receipt Upload -->
+    <div class="card-section">
+      <p class="section-label">Receipt / Document</p>
+      <div class="upload-zone" id="uploadZone"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <input type="file" id="receiptFile" accept="image/*,.pdf"
+               onchange="handleFileSelect(event)" />
+        <div class="upload-icon">📎</div>
+        <p class="upload-text"><strong>Tap to upload</strong> or drag &amp; drop</p>
+        <p class="upload-text" style="margin-top:4px;font-size:.75rem;">JPG, PNG, PDF up to 10 MB</p>
+      </div>
+      <div id="previewWrap">
+        <img id="receiptPreview" src="" alt="Receipt preview" />
+        <div id="pdfPreview" class="pdf-preview-box" style="display:none">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
+          </svg>
+          <span id="pdfFilename"></span>
+        </div>
+        <p class="preview-filename" id="previewFilename"></p>
+        <button type="button" class="remove-file-btn" onclick="removeFile()" title="Remove">✕</button>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card-section">
+      <p class="section-label">Notes</p>
+      <div class="form-group">
+        <textarea id="notes" placeholder="Any additional notes…" style="min-height:60px;"></textarea>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="card-section">
+      <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+        <div class="spinner"></div>
+        <span class="btn-label">Save Record</span>
+      </button>
+
+      <div class="alert alert-success" id="successAlert">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14l-4-4 1.41-1.41L10 13.17l6.59-6.59L18 8l-8 8z"/></svg>
+        <div id="successText">Record saved successfully!</div>
+      </div>
+
+      <div class="alert alert-error" id="errorAlert">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+        <div id="errorText">An error occurred. Please try again.</div>
+      </div>
+    </div>
+
+  </div><!-- .card -->
+
+</div><!-- .page-wrap -->
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let selectedType = 'Expense';
+  let selectedFileData = null;   // { base64, mimeType, name }
+  let isSubmitting = false;
+
+  // ── Init ───────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    // Default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('transactionDate').value = today;
+  });
+
+  // ── Entry Type ─────────────────────────────────────────
+  function setType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.type-pill.${type.toLowerCase()}`).classList.add('active');
+  }
+
+  // ── Category ───────────────────────────────────────────
+  function handleCategoryChange() {
+    const val = document.getElementById('category').value;
+    const grp = document.getElementById('customCategoryGroup');
+    if (val === 'Other') {
+      grp.classList.add('visible');
+      document.getElementById('customCategory').focus();
+    } else {
+      grp.classList.remove('visible');
+      document.getElementById('customCategory').value = '';
+    }
+  }
+
+  // ── File Upload ────────────────────────────────────────
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.add('drag-over');
+  }
+  function handleDragLeave(e) {
+    document.getElementById('uploadZone').classList.remove('drag-over');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) processFile(file);
+  }
+
+  function processFile(file) {
+    if (file.size > 10 * 1024 * 1024) {
+      showError('File is too large. Maximum size is 10 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Full = e.target.result;
+      const base64 = base64Full.split(',')[1];
+      selectedFileData = { base64, mimeType: file.type, name: file.name };
+
+      const previewWrap = document.getElementById('previewWrap');
+      const previewImg = document.getElementById('receiptPreview');
+      const pdfPreview = document.getElementById('pdfPreview');
+      const previewFilename = document.getElementById('previewFilename');
+
+      previewFilename.textContent = file.name;
+      previewWrap.classList.add('visible');
+
+      if (file.type === 'application/pdf') {
+        previewImg.style.display = 'none';
+        pdfPreview.style.display = 'flex';
+        document.getElementById('pdfFilename').textContent = file.name;
+      } else {
+        previewImg.style.display = 'block';
+        pdfPreview.style.display = 'none';
+        previewImg.src = base64Full;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeFile() {
+    selectedFileData = null;
+    document.getElementById('receiptFile').value = '';
+    document.getElementById('previewWrap').classList.remove('visible');
+    document.getElementById('receiptPreview').src = '';
+  }
+
+  // ── Validation ─────────────────────────────────────────
+  function validate() {
+    const amount = parseFloat(document.getElementById('amount').value);
+    if (!amount || amount <= 0) { showError('Please enter a valid amount greater than $0.00.'); return false; }
+
+    const date = document.getElementById('transactionDate').value;
+    if (!date) { showError('Please select a transaction date.'); return false; }
+
+    const category = document.getElementById('category').value;
+    if (!category) { showError('Please select a category.'); return false; }
+
+    if (category === 'Other') {
+      const custom = document.getElementById('customCategory').value.trim();
+      if (!custom) { showError('Please enter a custom category name.'); return false; }
+    }
+
+    return true;
+  }
+
+  // ── Submit ─────────────────────────────────────────────
+  function submitForm() {
+    if (isSubmitting) return;
+    hideAlerts();
+    if (!validate()) return;
+
+    const category = document.getElementById('category').value;
+    const customCategory = document.getElementById('customCategory').value.trim();
+    const finalCategory = category === 'Other' ? customCategory : category;
+
+    const formData = {
+      entryType:       selectedType,
+      amount:          document.getElementById('amount').value,
+      baseCategory:    category,
+      customCategory:  customCategory,
+      finalCategory:   finalCategory,
+      vendor:          document.getElementById('vendor').value.trim(),
+      transactionDate: document.getElementById('transactionDate').value,
+      description:     document.getElementById('description').value.trim(),
+      paymentMethod:   document.getElementById('paymentMethod').value,
+      notes:           document.getElementById('notes').value.trim(),
+      fileData:        selectedFileData
+    };
+
+    setLoading(true);
+
+    google.script.run
+      .withSuccessHandler(handleSuccess)
+      .withFailureHandler(handleError)
+      .saveRecord(formData);
+  }
+
+  function handleSuccess(response) {
+    setLoading(false);
+    if (response && response.success) {
+      const cat = response.category || 'Record';
+      const amt = response.amount ? `$${parseFloat(response.amount).toFixed(2)}` : '';
+      showSuccess(`✅ ${cat} of ${amt} saved! ${response.fileUrl ? '<a href="' + response.fileUrl + '" target="_blank" style="color:#1c5c3a;font-weight:600;">View receipt ↗</a>' : ''}`);
+      resetForm();
+    } else {
+      showError(response?.message || 'An unknown error occurred.');
+    }
+  }
+
+  function handleError(error) {
+    setLoading(false);
+    showError('Error: ' + (error.message || error));
+  }
+
+  // ── UI Helpers ─────────────────────────────────────────
+  function setLoading(state) {
+    isSubmitting = state;
+    const btn = document.getElementById('submitBtn');
+    if (state) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    } else {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function showSuccess(html) {
+    const el = document.getElementById('successAlert');
+    document.getElementById('successText').innerHTML = html;
+    el.classList.add('visible');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function showError(msg) {
+    const el = document.getElementById('errorAlert');
+    document.getElementById('errorText').textContent = msg;
+    el.classList.add('visible');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function hideAlerts() {
+    document.getElementById('successAlert').classList.remove('visible');
+    document.getElementById('errorAlert').classList.remove('visible');
+  }
+
+  function resetForm() {
+    document.getElementById('amount').value = '';
+    document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('category').value = '';
+    document.getElementById('customCategory').value = '';
+    document.getElementById('customCategoryGroup').classList.remove('visible');
+    document.getElementById('vendor').value = '';
+    document.getElementById('paymentMethod').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('notes').value = '';
+    removeFile();
+  }
+</script>
+</body>
+</html>
